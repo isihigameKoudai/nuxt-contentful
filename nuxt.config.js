@@ -1,4 +1,11 @@
 const pkg = require('./package')
+const { getConfigForKeys } = require('./lib/config.js')
+const ctfConfig = getConfigForKeys([
+  'CTF_BLOG_POST_TYPE_ID',
+  'CTF_SPACE_ID',
+  'CTF_CDA_ACCESS_TOKEN'
+])
+const cdaClient = createClient(ctfConfig)
 
 module.exports = {
   mode: 'universal',
@@ -13,9 +20,7 @@ module.exports = {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'description', name: 'description', content: pkg.description }
     ],
-    link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-    ]
+    link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
   },
 
   /*
@@ -26,14 +31,33 @@ module.exports = {
   /*
   ** Global CSS
   */
-  css: [
-  ],
+  css: [],
 
   /*
   ** Plugins to load before mounting the App
   */
-  plugins: [
-  ],
+  plugins: [{ src: '~plugins/contentful' }],
+
+  /* 
+  ** generate options
+  */
+
+  generate: {
+    routes() {
+      return cdaClient
+        .getEntries({
+          content_type: ctfConfig.CTF_BLOG_POST_TYPE_ID
+        })
+        .then(entries => {
+          return [...entries.items.map(entry => `/blog/${entry.fields.slug}`)]
+        })
+    }
+  },
+  env: {
+    CTF_SPACE_ID: ctfConfig.CTF_SPACE_ID,
+    CTF_CDA_ACCESS_TOKEN: ctfConfig.CTF_CDA_ACCESS_TOKEN,
+    CTF_BLOG_POST_TYPE_ID: ctfConfig.CTF_BLOG_POST_TYPE_ID
+  },
 
   /*
   ** Nuxt.js modules
